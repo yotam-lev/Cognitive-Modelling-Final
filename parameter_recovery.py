@@ -11,6 +11,12 @@ from pyddm import Model, Sample, Fittable
 from pyddm.models import DriftConstant, NoiseConstant, BoundConstant, OverlayNonDecision, ICPoint, Drift
 from pyddm.functions import fit_adjust_model
 from pyddm.models.loss import LossRobustLikelihood
+import random
+
+
+RANDOM_SEED = 42
+random.seed(RANDOM_SEED)
+np.random.seed(RANDOM_SEED)
 
 # 1. Define the Ground Truth Model (The "Generator")
 # We use the structure of your winning model (Drift-varying)
