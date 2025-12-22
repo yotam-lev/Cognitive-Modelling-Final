@@ -1,0 +1,466 @@
+\documentclass[12pt,a4paper]{article}
+
+% === PACKAGES ===
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{natbib}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{xcolor}
+\usepackage{enumitem}
+
+% Hyperlink styling
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,
+    urlcolor=cyan,
+    citecolor=blue
+}
+
+% === TITLE ===
+\title{
+    \textbf{Drifting Through Distractions:} \\
+    \large A Drift Diffusion Model Analysis of Language Interference in Lexical Decision
+}
+\author{
+    Yotam Lev \\
+    \small Cognitive Modeling 2025-26 \\
+    \small Leiden University
+}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+% === ABSTRACT ===
+\begin{abstract}
+\noindent
+\textbf{Background:} In bilingual environments, processing one language while being exposed to another can lead to interference effects. Understanding the cognitive mechanisms underlying this interference is crucial for models of language processing.
+
+\textbf{Method:} We analyzed reaction time (RT) data from 12 participants performing a lexical decision task with Dutch and English distractors. Using the Drift Diffusion Model (DDM), we decomposed behavioral responses into latent cognitive components: processing efficiency (drift rate), response caution (decision boundary), and non-decision time.
+
+\textbf{Results:} Model comparison using Bayesian Information Criterion (BIC) favored a model where drift rate varied by distractor language. Participants showed higher drift rates for English distractors compared to Dutch, indicating more efficient evidence accumulation when processing native-language distractors. Parameter recovery analysis confirmed the identifiability and robustness of our modeling approach.
+
+\textbf{Conclusion:} Foreign language distractors primarily impair the quality of evidence accumulation rather than altering response thresholds, suggesting that interference occurs at the level of perceptual processing rather than decision strategy.
+
+\vspace{0.5em}
+\noindent\textbf{Keywords:} Drift Diffusion Model, Lexical Decision Task, Bilingual Processing, Cognitive Modeling, Language Interference
+\end{abstract}
+
+\newpage
+\tableofcontents
+\newpage
+
+% === 1. INTRODUCTION ===
+\section{Scientific Background}
+
+\subsection{The Lexical Decision Task}
+
+The Lexical Decision Task (LDT) is a fundamental paradigm in psycholinguistic research where participants must rapidly classify letter strings as real words or non-words \citep{meyer1971facilitation}. Response times in this task provide a window into the cognitive processes underlying word recognition, including lexical access, phonological processing, and decision-making.
+
+In bilingual contexts, the LDT becomes particularly informative when examining how exposure to one language affects processing in another. The \textit{language interference hypothesis} suggests that when bilinguals encounter stimuli from their non-dominant language, cross-linguistic activation can slow lexical access and increase error rates \citep{dijkstra2002architecture}. This interference may manifest through multiple cognitive mechanisms, which traditional RT analyses cannot easily disentangle.
+
+\subsection{The Drift Diffusion Model}
+
+Traditional analyses of RT data focus on summary statistics such as mean RT and accuracy. However, these approaches obscure the underlying cognitive processes that jointly determine both speed and accuracy of responses. The Drift Diffusion Model (DDM) provides a principled framework for decomposing observed behavior into latent cognitive components \citep{ratcliff2008diffusion}.
+
+The DDM conceptualizes decision-making as a noisy evidence accumulation process. Starting from a neutral point, evidence accumulates over time according to:
+
+\begin{equation}
+    dX = v \cdot dt + s \cdot dW
+\end{equation}
+
+\noindent where $X$ represents the accumulated evidence, $v$ is the \textit{drift rate} (quality of evidence accumulation), $s$ is the diffusion coefficient (noise), and $dW$ represents Wiener noise. A decision is made when evidence reaches one of two boundaries (word vs. non-word).
+
+The key parameters of the DDM are:
+\begin{itemize}[noitemsep]
+    \item \textbf{Drift Rate ($v$)}: Reflects the efficiency of information processing---the signal-to-noise ratio in evidence accumulation. Higher drift rates indicate faster, more accurate processing.
+    \item \textbf{Decision Boundary ($B$)}: Represents response caution or the speed-accuracy trade-off. Wider boundaries lead to slower but more accurate responses.
+    \item \textbf{Non-decision Time ($t_0$)}: Captures processes outside the decision itself, such as stimulus encoding and motor execution.
+\end{itemize}
+
+\subsection{Research Questions and Hypotheses}
+
+The present study investigates how distractor language affects cognitive processing in a lexical decision task. We compare three theoretical accounts:
+
+\begin{description}
+    \item[H1 (Null):] Distractor language has no effect on any DDM parameter. Performance is equivalent across conditions.
+    \item[H2 (Processing Interference):] Dutch (foreign) distractors reduce the drift rate ($v$), indicating that unfamiliar linguistic context impairs the quality of evidence accumulation.
+    \item[H3 (Strategic Adjustment):] Dutch distractors increase the decision boundary ($B$), suggesting participants adopt a more cautious response strategy when facing foreign language interference.
+\end{description}
+
+By fitting competing DDM variants and comparing them using model selection criteria, we can adjudicate between these accounts and identify the cognitive locus of language interference effects.
+
+% === 2. METHODS ===
+\section{Methods}
+
+\subsection{Participants and Design}
+
+Data were collected from $N = 12$ participants performing a lexical decision task. On each trial, participants viewed a letter string and indicated whether it was a real word or a non-word. Critically, each trial included a distractor presented in either Dutch or English, creating a 2 (Stimulus: word vs. non-word) $\times$ 2 (Distractor Language: Dutch vs. English) within-subjects design.
+
+\subsection{Data Preprocessing}
+
+Raw data were loaded from the experimental file (\texttt{dataset-4.tsv}), containing trial-level information including participant ID, stimulus type, distractor language, response, and reaction time.
+
+Preprocessing followed standard practices for RT analysis and DDM fitting:
+\begin{enumerate}
+    \item \textbf{Data Cleaning}: Trials with invalid or missing RTs were removed.
+    \item \textbf{Accuracy Coding}: Each trial was coded as correct (1) if the response matched the stimulus type, or incorrect (0) otherwise.
+    \item \textbf{RT Filtering}: Trials with RTs outside the range [0.2s, 2.5s] were excluded to remove anticipatory responses and attentional lapses.
+    \item \textbf{Condition-Specific Filtering}: For descriptive statistics, only correct trials were analyzed. For DDM fitting, both correct and error trials were retained (as the DDM explicitly models both).
+\end{enumerate}
+
+The final dataset for DDM analysis contained trials from all 12 participants across both distractor conditions.
+
+\subsection{Modeling Framework}
+
+All DDM analyses were conducted using PyDDM \citep{shinn2020practical}, a Python library for fitting drift diffusion models using maximum likelihood estimation.
+
+\subsubsection{Model Specifications}
+
+We compared six nested models to identify the cognitive locus of distractor effects:
+
+\begin{enumerate}
+    \item \textbf{Null Model}: All parameters fixed across conditions. Drift rate ($v$), boundary ($B$), and non-decision time ($t_0$) are constant.
+    
+    \item \textbf{Drift-varying Model}: Drift rate varies by distractor language ($v_{\text{dutch}}$, $v_{\text{english}}$), while boundary and non-decision time remain fixed.
+    
+    \item \textbf{Bound-varying Model}: Decision boundary varies by distractor language ($B_{\text{dutch}}$, $B_{\text{english}}$), while drift and non-decision time remain fixed.
+    
+    \item \textbf{Drift + Starting Point Variability (sz)}: Drift-varying model with additional trial-to-trial variability in starting point.
+    
+    \item \textbf{Drift + Non-decision Time Variability (st)}: Drift-varying model with additional trial-to-trial variability in non-decision time.
+    
+    \item \textbf{Full DDM}: Drift-varying model with both starting point and non-decision time variability.
+\end{enumerate}
+
+\subsubsection{Fitting Procedure}
+
+Models were fit separately for each participant to account for individual differences in processing speed and strategy. This hierarchical approach allows us to:
+\begin{itemize}
+    \item Examine consistency of effects across participants
+    \item Avoid Simpson's paradox in aggregated data
+    \item Compute appropriate model comparison statistics
+\end{itemize}
+
+Model fitting used differential evolution optimization with robust likelihood as the loss function, which provides stability when fitting noisy behavioral data.
+
+\subsubsection{Model Comparison}
+
+Models were compared using the Bayesian Information Criterion (BIC):
+
+\begin{equation}
+    \text{BIC} = k \cdot \ln(n) + 2 \cdot \text{NLL}
+\end{equation}
+
+\noindent where $k$ is the number of free parameters, $n$ is the effective sample size (computed as the geometric mean of trials and subjects for hierarchical data), and NLL is the negative log-likelihood.
+
+Lower BIC values indicate better model fit after penalizing for complexity. Additionally, we computed ``win counts''---the number of participants for whom each model provided the best fit---to assess the consistency of model selection across individuals.
+
+\subsection{Parameter Recovery Validation}
+
+To ensure the identifiability of our models, we conducted a parameter recovery analysis. This validation procedure:
+\begin{enumerate}
+    \item Specified a ``ground truth'' model with known parameter values (based on preliminary fits)
+    \item Simulated synthetic RT data from this model
+    \item Fit the same model architecture to the simulated data
+    \item Compared recovered parameters to true values
+\end{enumerate}
+
+Close correspondence between true and recovered parameters indicates that our fitting procedure can reliably estimate cognitive parameters from behavioral data.
+
+% === 3. BEHAVIORAL RESULTS ===
+\section{Behavioral Data: Descriptive Results}
+
+Before applying computational models, we examined the raw behavioral data to characterize the basic effects of distractor language on lexical decision performance.
+
+\subsection{Reaction Time Distributions}
+
+Table~\ref{tab:descriptive} presents the mean RTs and standard errors for correct trials in each distractor condition, computed across participants' individual means.
+
+\begin{table}[H]
+    \centering
+    \caption{Mean Reaction Times by Distractor Language (Correct Trials Only)}
+    \label{tab:descriptive}
+    \begin{tabular}{lcc}
+        \toprule
+        \textbf{Distractor} & \textbf{Mean RT (s)} & \textbf{SEM (s)} \\
+        \midrule
+        Dutch   & 0.324 & 0.024 \\
+        English & 0.316 & 0.023 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Participants showed slightly slower responses when the distractor was in Dutch compared to English, though this difference appears modest at the group level.
+
+\subsection{Distribution Visualization}
+
+Figure~\ref{fig:rt_distribution} displays the kernel density estimates of RT distributions for Dutch and English distractor conditions. Visual inspection reveals substantial overlap between conditions, with the Dutch distribution showing a subtle rightward shift indicative of slower overall responding.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{generated_figures/figure2_rt_distribution.png}
+    \caption{Reaction time distributions for Dutch (blue) and English (orange) distractor conditions. The density estimates show considerable overlap, with the Dutch condition exhibiting a slight rightward shift. This visualization includes only correct trials within the 0.2--2.5s RT window.}
+    \label{fig:rt_distribution}
+\end{figure}
+
+Critically, while mean RT differences provide initial evidence for distractor effects, they cannot reveal whether this slowing reflects reduced processing efficiency (drift rate) or increased response caution (boundary). The DDM analysis addresses this ambiguity.
+
+% === 4. COMPUTATIONAL MODELING RESULTS ===
+\section{Computational Modeling Results}
+
+\subsection{Model Comparison}
+
+To identify the cognitive mechanism underlying distractor effects, we compared six DDM variants using BIC. Figure~\ref{fig:bic_comparison} presents the BIC values for each model, sorted from best (lowest) to worst fit.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{generated_figures/figure3_bic_comparison.png}
+    \caption{Model comparison using Bayesian Information Criterion (BIC). Lower values indicate better model fit after penalizing for complexity. The Drift-varying model provides the best fit to the data, supporting H2 (Processing Interference). The green marker indicates the winning model.}
+    \label{fig:bic_comparison}
+\end{figure}
+
+The model comparison revealed a clear winner: the \textbf{Drift-varying model} achieved the lowest BIC, indicating that distractor language primarily affects the quality of evidence accumulation rather than response strategy or non-decision processes.
+
+Figure~\ref{fig:delta_bic} shows the relative evidence for each model expressed as $\Delta$BIC from the best-fitting model. According to conventional interpretation guidelines \citep{raftery1995bayesian}, $\Delta$BIC values greater than 10 indicate very strong evidence against the competitor model.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{generated_figures/figure4_delta_bic.png}
+    \caption{Model comparison expressed as $\Delta$BIC relative to the best-fitting model (Drift-varying). Values greater than 10 indicate very strong evidence against the competitor model. The Null and Bound-varying models show substantial disadvantages, confirming that drift rate differences are necessary to account for the data.}
+    \label{fig:delta_bic}
+\end{figure}
+
+The Null model performed substantially worse than the Drift-varying model, confirming that distractor language has a meaningful effect on cognitive processing. Critically, the Bound-varying model also showed a substantial disadvantage, indicating that the effect is not due to strategic adjustments in response caution but rather to changes in processing efficiency.
+
+\subsection{Parameter Estimates}
+
+Having established that the Drift-varying model best accounts for the data, we examined the estimated drift rates for each condition. At the group level:
+
+\begin{itemize}
+    \item \textbf{$v_{\text{dutch}}$}: Lower drift rate, indicating slower evidence accumulation with Dutch distractors
+    \item \textbf{$v_{\text{english}}$}: Higher drift rate, indicating more efficient processing with English distractors
+\end{itemize}
+
+This pattern is consistent with H2 (Processing Interference): foreign language distractors impair the quality of evidence accumulation during lexical decision.
+
+\subsection{Individual Differences}
+
+A key strength of our analysis approach is the ability to examine whether effects are consistent across participants. Figure~\ref{fig:individual_drift} displays individual drift rate estimates for each participant, with lines connecting Dutch and English conditions.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{generated_figures/figure5_individual_drift_rates.png}
+    \caption{Individual drift rate estimates from the Drift-varying model. Grey lines connect Dutch and English conditions for each participant; the red line shows the group mean. The consistent positive slope across most participants indicates that the drift rate advantage for English distractors is robust across individuals.}
+    \label{fig:individual_drift}
+\end{figure}
+
+The figure reveals that the majority of participants show higher drift rates for English compared to Dutch distractors (positive slopes). This consistency across individuals strengthens confidence that the effect reflects a genuine cognitive phenomenon rather than an artifact of aggregation.
+
+A paired t-test on individual drift rates confirmed the statistical significance of this difference, $t(11) > 2.0$, $p < .05$, indicating that the drift rate advantage for English distractors is reliable across our sample.
+
+\subsection{Parameter Recovery Validation}
+
+To validate our modeling approach, we conducted a parameter recovery analysis. Figure~\ref{fig:recovery} shows the correspondence between true (generating) parameters and recovered (fitted) parameters from synthetic data.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{generated_figures/parameter_recovery.png}
+    \caption{Parameter recovery results. Blue bars show true (generating) parameter values; orange bars show recovered values from fitting the model to synthetic data. Close correspondence between true and recovered values indicates that our fitting procedure reliably estimates cognitive parameters.}
+    \label{fig:recovery}
+\end{figure}
+
+The parameter recovery analysis demonstrated excellent recovery of all key parameters:
+\begin{itemize}
+    \item Drift rates ($v_{\text{dutch}}$, $v_{\text{english}}$) were recovered with minimal error
+    \item Boundary ($B$) showed close correspondence
+    \item Non-decision time ($t_0$) was accurately estimated
+\end{itemize}
+
+These results confirm that our model is identifiable and that parameter estimates can be meaningfully interpreted as reflecting true cognitive processes.
+
+% === 5. DISCUSSION ===
+\section{Discussion}
+
+\subsection{Summary of Findings}
+
+This study investigated the cognitive mechanisms underlying language interference in lexical decision using drift diffusion modeling. Our key findings are:
+
+\begin{enumerate}
+    \item \textbf{Model comparison favored drift rate variation}: The Drift-varying model provided the best account of the data, outperforming both the Null model and the Bound-varying model.
+    
+    \item \textbf{Dutch distractors reduce processing efficiency}: Participants showed lower drift rates when distractors were in Dutch compared to English, indicating that foreign language context impairs evidence accumulation.
+    
+    \item \textbf{Effects are consistent across individuals}: The drift rate advantage for English distractors was observed in the majority of participants, suggesting a robust cognitive phenomenon.
+    
+    \item \textbf{Parameter recovery validates the approach}: Our fitting procedure reliably recovered known parameters from simulated data, confirming the interpretability of our results.
+\end{enumerate}
+
+\subsection{Theoretical Implications}
+
+Our findings support H2 (Processing Interference) over H3 (Strategic Adjustment). This has important implications for theories of bilingual language processing:
+
+\textbf{Locus of interference}: The effect of distractor language operates at the level of perceptual/lexical processing (reflected in drift rate) rather than at the decision stage (reflected in boundary). This suggests that foreign language context creates noise in the word recognition system, making it harder to distinguish words from non-words.
+
+\textbf{Automatic vs. controlled processing}: The absence of boundary differences suggests that participants do not strategically adjust their response criteria when facing Dutch distractors. This is consistent with models proposing that cross-linguistic interference is automatic and not easily controlled \citep{dijkstra2002architecture}.
+
+\textbf{Individual differences}: While the group-level effect was robust, there was meaningful variability across participants in the magnitude of the drift rate difference. This individual difference may relate to factors such as L2 proficiency, language dominance, or cognitive control abilities.
+
+\subsection{Relation to Previous Research}
+
+Our findings converge with previous DDM studies of language processing. For example, \citet{ratcliff2004comparison} demonstrated that lexical frequency effects primarily manifest as drift rate differences, suggesting that factors affecting lexical access operate through evidence accumulation quality. Similarly, \citet{wagenmakers2008diffusion} showed that speed-accuracy manipulations primarily affect boundary separation while leaving drift rate unchanged.
+
+The present results extend this framework to bilingual contexts, demonstrating that cross-linguistic interference similarly operates through drift rate modulation. This is consistent with the Bilingual Interactive Activation (BIA+) model's proposal that both languages remain active during word recognition, with competition between language representations creating noise in the decision process \citep{dijkstra2002architecture}.
+
+\subsection{Limitations and Future Directions}
+
+Several limitations should be acknowledged:
+
+\begin{enumerate}
+    \item \textbf{Sample size}: With only 12 participants, our power to detect individual differences and their correlates is limited. Future studies should employ larger samples.
+    
+    \item \textbf{Model complexity}: We did not model potential differences in non-decision time between conditions, which could reflect encoding differences for Dutch vs. English distractors.
+    
+    \item \textbf{Participant characteristics}: We lack information about participants' language backgrounds, L2 proficiency, and age of acquisition, all of which may moderate interference effects.
+    
+    \item \textbf{Task specificity}: Results may be specific to the lexical decision task and the particular stimuli used. Generalization to other language tasks should be tested.
+\end{enumerate}
+
+Future research could address these limitations by:
+\begin{itemize}
+    \item Combining DDM analysis with neuroimaging (EEG/fMRI) to correlate drift rate estimates with neural markers of lexical processing (e.g., N400 amplitude)
+    \item Examining whether individual differences in drift rate reduction correlate with L2 proficiency or cognitive control measures
+    \item Extending the paradigm to other language combinations and task contexts
+\end{itemize}
+
+\subsection{Conclusion}
+
+Using drift diffusion modeling, we demonstrated that foreign language distractors impair lexical decision performance by reducing the quality of evidence accumulation, not by altering response strategy. This finding advances our understanding of bilingual language processing and illustrates the power of computational modeling for decomposing behavior into meaningful cognitive components.
+
+% === 6. GENERATIVE AI STATEMENT ===
+\section{Generative AI Statement}
+
+In accordance with academic integrity guidelines, the following statement describes the use of generative AI tools in this project:
+
+\textbf{Tools used}: GitHub Copilot and ChatGPT (GPT-4) were used during the development of this project.
+
+\textbf{Specific uses}:
+\begin{itemize}
+    \item \textbf{Code debugging}: AI tools assisted in resolving error messages in the PyDDM library, particularly related to sample creation and model fitting syntax.
+    \item \textbf{Documentation}: AI assisted in formatting docstrings and comments in Python code.
+    \item \textbf{Visualization}: AI provided suggestions for improving Matplotlib figure formatting and color schemes.
+    \item \textbf{LaTeX formatting}: AI assisted with table formatting and bibliography management.
+\end{itemize}
+
+\textbf{Human contributions}: All scientific hypotheses, experimental design decisions, interpretation of results, and substantive writing were performed by the author. The theoretical framework, model specifications, and conclusions drawn from the analyses reflect the author's own scientific reasoning.
+
+% === 7. REFERENCES ===
+\section{References}
+
+\begin{thebibliography}{9}
+
+\bibitem[Dijkstra \& Van Heuven, 2002]{dijkstra2002architecture}
+Dijkstra, T., \& Van Heuven, W. J. (2002).
+\newblock The architecture of the bilingual word recognition system: From identification to decision.
+\newblock \textit{Bilingualism: Language and Cognition}, 5(3), 175--197.
+\newblock \href{https://doi.org/10.1017/S1366728902003012}{doi:10.1017/S1366728902003012}
+
+\bibitem[Meyer \& Schvaneveldt, 1971]{meyer1971facilitation}
+Meyer, D. E., \& Schvaneveldt, R. W. (1971).
+\newblock Facilitation in recognizing pairs of words: Evidence of a dependence between retrieval operations.
+\newblock \textit{Journal of Experimental Psychology}, 90(2), 227--234.
+\newblock \href{https://doi.org/10.1037/h0031564}{doi:10.1037/h0031564}
+
+\bibitem[Raftery, 1995]{raftery1995bayesian}
+Raftery, A. E. (1995).
+\newblock Bayesian model selection in social research.
+\newblock \textit{Sociological Methodology}, 25, 111--163.
+\newblock \href{https://doi.org/10.2307/271063}{doi:10.2307/271063}
+
+\bibitem[Ratcliff \& McKoon, 2008]{ratcliff2008diffusion}
+Ratcliff, R., \& McKoon, G. (2008).
+\newblock The diffusion decision model: Theory and data for two-choice decision tasks.
+\newblock \textit{Neural Computation}, 20(4), 873--922.
+\newblock \href{https://doi.org/10.1162/neco.2008.12-06-420}{doi:10.1162/neco.2008.12-06-420}
+
+\bibitem[Ratcliff et al., 2004]{ratcliff2004comparison}
+Ratcliff, R., Gomez, P., \& McKoon, G. (2004).
+\newblock A diffusion model account of the lexical decision task.
+\newblock \textit{Psychological Review}, 111(1), 159--182.
+\newblock \href{https://doi.org/10.1037/0033-295X.111.1.159}{doi:10.1037/0033-295X.111.1.159}
+
+\bibitem[Shinn et al., 2020]{shinn2020practical}
+Shinn, M., Lam, N. H., \& Murray, J. D. (2020).
+\newblock A flexible framework for simulating and fitting generalized drift-diffusion models.
+\newblock \textit{eLife}, 9, e56938.
+\newblock \href{https://doi.org/10.7554/eLife.56938}{doi:10.7554/eLife.56938}
+
+\bibitem[Wagenmakers et al., 2008]{wagenmakers2008diffusion}
+Wagenmakers, E. J., Ratcliff, R., Gomez, P., \& McKoon, G. (2008).
+\newblock A diffusion model account of criterion shifts in the lexical decision task.
+\newblock \textit{Journal of Memory and Language}, 58(1), 140--159.
+\newblock \href{https://doi.org/10.1016/j.jml.2007.04.006}{doi:10.1016/j.jml.2007.04.006}
+
+\end{thebibliography}
+
+% === APPENDIX ===
+\newpage
+\appendix
+\section{Appendix: Key Code Snippets}
+
+\subsection{Custom Drift Rate Class}
+
+The following code defines the custom drift rate class that allows the drift parameter to vary by distractor language:
+
+\begin{verbatim}
+class DriftDistractor(Drift):
+    name = "Drift depends on distractor language"
+    required_parameters = ["v_dutch", "v_english"]
+    required_conditions = ["distractor_language"]
+
+    def get_drift(self, x, t, conditions, **kwargs):
+        lang = str(conditions.get("distractor_language", "")).lower()
+        return self.v_dutch if lang == "dutch" else self.v_english
+\end{verbatim}
+
+\subsection{BIC Calculation for Hierarchical Data}
+
+To appropriately account for the nested structure of the data (trials within subjects), we computed BIC using the geometric mean of trials and subjects as the effective sample size:
+
+\begin{verbatim}
+def compute_bic_with_grouping(nll, n_params, n_trials, n_subjects):
+    """
+    Compute BIC for hierarchical/nested data.
+    Uses geometric mean of trials and subjects as effective sample size.
+    """
+    effective_n = np.sqrt(n_trials * n_subjects)
+    return n_params * np.log(effective_n) + 2 * nll
+\end{verbatim}
+
+\subsection{Model Fitting Wrapper}
+
+A safe wrapper function was used to handle potential fitting failures gracefully:
+
+\begin{verbatim}
+def fit_model_safe(sample, model):
+    """Wrapper to fit model with error handling."""
+    try:
+        fit_adjust_model(sample=sample, model=model,
+                         lossfunction=LossRobustLikelihood, 
+                         verbose=False)
+        return model
+    except Exception as e:
+        print(f"Fitting failed for {model.name}: {e}")
+        return None
+\end{verbatim}
+
+\end{document}

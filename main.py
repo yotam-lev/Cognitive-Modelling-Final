@@ -7,6 +7,9 @@ import setup_and_preprocess as pre
 import modeling_and_analysis as ddm
 import random 
 import numpy as np
+import warnings
+
+
 
 # Configuration
 RANDOM_SEED = 42
@@ -14,6 +17,9 @@ random.seed(RANDOM_SEED)
 np.random.seed(RANDOM_SEED)
 DATA_FILE = "dataset-4.tsv"
 
+warnings.filterwarnings("ignore", message=".*Setting undecided probability.*")
+warnings.filterwarnings("ignore", message=".*is deprecated and will be removed in a future version.*")
+warnings.filterwarnings("ignore", category=UserWarning)
 
 
 def main():
