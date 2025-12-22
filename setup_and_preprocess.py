@@ -3,9 +3,14 @@
 # Module for loading data and running descriptive statistics (Phase 1).
 
 import os
+import warnings
+warnings.filterwarnings("ignore")
+
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend
 import matplotlib.pyplot as plt
 from scipy import stats
 import random
@@ -24,9 +29,7 @@ def ensure_figures_dir():
         print(f"Created directory: {FIGURES_DIR}")
 
 def load_data(filepath):
-    """
-    Loads the raw TSV data, fixes types, and creates the 'correct' column.
-    """
+    """Loads the raw TSV data, fixes types, and creates the 'correct' column."""
     print(f"Loading data from {filepath}...")
     try:
         df = pd.read_csv(filepath, sep="\t", header=None,
@@ -52,38 +55,26 @@ def load_data(filepath):
     return df
 
 def get_phase1_data(df):
-    """
-    Prepares data for Descriptive Stats:
-    - Keep CORRECT trials only.
-    - Keep RTs within [0.2s, 2.5s].
-    """
+    """Prepares data for Descriptive Stats: correct trials only, RT in [0.2s, 2.5s]."""
     return df[(df["correct"] == 1) & (df["rt"] >= 0.2) & (df["rt"] <= 2.5)].copy()
 
 def get_phase2_data(df):
-    """
-    Prepares data for DDM Modeling:
-    - Keep RTs within [0.2s, 2.5s].
-    - KEEP ERRORS (essential for DDM).
-    """
+    """Prepares data for DDM Modeling: RT in [0.2s, 2.5s], includes errors."""
     return df[(df["rt"] >= 0.2) & (df["rt"] <= 2.5)].copy()
 
 def generate_descriptive_plots(df):
-    """
-    Generates the Table of Means and the RT Distribution Plot (Figure 1 & 2).
-    """
+    """Generates the Table of Means and the RT Distribution Plot."""
     ensure_figures_dir()
     print("\n--- Generating Descriptive Plots ---")
     
-    # --- Compute means (per-participant -> across participants) ---
+    # Compute means (per-participant -> across participants)
     pp_means = df.groupby(["participant", "distractor_language"])["rt"].mean().unstack()
     conds = ["dutch", "english"]
     
-    # Ensure columns exist
     for c in conds:
         if c not in pp_means.columns:
             pp_means[c] = np.nan
     
-    # Compute across-participant mean and SEM
     means = pp_means[conds].mean(axis=0, skipna=True)
     sems = pp_means[conds].apply(lambda col: stats.sem(col.dropna()) if col.dropna().size > 0 else np.nan)
     
@@ -109,7 +100,7 @@ def generate_descriptive_plots(df):
     plt.tight_layout()
     plt.savefig(os.path.join(FIGURES_DIR, "figure1_mean_rt_table.png"), dpi=150, bbox_inches='tight')
     print(f"Saved: {FIGURES_DIR}/figure1_mean_rt_table.png")
-    plt.show()
+    plt.close()
     
     # --- Figure 2: Distribution plot (Dutch vs English) ---
     df_plot = df[df["distractor_language"].isin(conds)].copy()
@@ -122,6 +113,6 @@ def generate_descriptive_plots(df):
         plt.tight_layout()
         plt.savefig(os.path.join(FIGURES_DIR, "figure2_rt_distribution.png"), dpi=150, bbox_inches='tight')
         print(f"Saved: {FIGURES_DIR}/figure2_rt_distribution.png")
-        plt.show()
+        plt.close()
     else:
         print("Not enough data for distribution plot.")
